@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Form</title>
+    <title>Interactive Form with Editable Previous Answers</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -46,81 +46,150 @@
         .previous-answer {
             margin-bottom: 15px;
         }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .question-number {
+            font-size: 18px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div id="form-container">
-        <div class="question" id="question1">
-            <h2>Question 1</h2>
-            <p>What is your favorite color?</p>
-            <textarea id="answer1"></textarea>
-            <button onclick="nextQuestion(1)">Next</button>
-        </div>
-        <div class="question hidden" id="question2">
-            <h2>Question 2</h2>
-            <p>What is your favorite animal?</p>
-            <textarea id="answer2"></textarea>
-            <div class="previous-answers">
-                <h3>Previous Answers:</h3>
-                <div class="previous-answer">
-                    <h4>Question 1: What is your favorite color?</h4>
-                    <textarea id="prevAnswer1"></textarea>
-                </div>
-            </div>
-            <button onclick="prevQuestion(2)">Previous</button>
-            <button onclick="nextQuestion(2)">Next</button>
-        </div>
-        <div class="question hidden" id="question3">
-            <h2>Question 3</h2>
-            <p>What is your favorite food?</p>
-            <textarea id="answer3"></textarea>
-            <div class="previous-answers">
-                <h3>Previous Answers:</h3>
-                <div class="previous-answer">
-                    <h4>Question 1: What is your favorite color?</h4>
-                    <textarea id="prevAnswer1_2"></textarea>
-                </div>
-                <div class="previous-answer">
-                    <h4>Question 2: What is your favorite animal?</h4>
-                    <textarea id="prevAnswer2"></textarea>
-                </div>
-            </div>
-            <button onclick="prevQuestion(3)">Previous</button>
-            <button onclick="submitForm()">Submit</button>
-        </div>
-    </div>
+    <div id="form-container"></div>
 
     <script>
-        function nextQuestion(currentQuestion) {
-            document.getElementById(`question${currentQuestion}`).classList.add('hidden');
+        // Define your questions here
+        const questions = [
+            "What is your favorite color?",
+            "What is your favorite animal?",
+            "What is your favorite food?",
+            "What is your favorite hobby?",
+            "What is your dream vacation destination?"
+        ];
+
+        let currentQuestion = 0;
+        let answers = {};
+
+        function generateForm() {
+            const container = document.getElementById('form-container');
+            questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = `question ${index === 0 ? '' : 'hidden'}`;
+                questionDiv.id = `question${index + 1}`;
+
+                let html = `
+                    <div class="navigation">
+                        <span class="question-number">Question ${index + 1} of ${questions.length}</span>
+                        <div>
+                            ${index > 0 ? `<button onclick="navigate(-1)">Previous</button>` : ''}
+                            ${index < questions.length - 1 
+                                ? `<button onclick="navigate(1)">Next</button>`
+                                : `<button onclick="submitForm()">Submit</button>`}
+                        </div>
+                    </div>
+                    <p>${question}</p>
+                    <textarea id="answer${index + 1}" oninput="updateAnswer(${index + 1})"></textarea>
+                `;
+
+                if (index > 0) {
+                    html += `
+                        <div class="previous-answers">
+                            <h3>Previous Answers:</h3>
+                            ${generatePreviousAnswersHTML(index)}
+                        </div>
+                    `;
+                }
+
+                questionDiv.innerHTML = html;
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function generatePreviousAnswersHTML(currentIndex) {
+            let html = '';
+            for (let i = 0; i < currentIndex; i++) {
+                html += `
+                    <div class="previous-answer">
+                        <h4>Question ${i + 1}: ${questions[i]}</h4>
+                        <textarea id="prevAnswer${i + 1}_${currentIndex + 1}" oninput="updatePreviousAnswer(${i + 1}, ${currentIndex + 1})"></textarea>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function updateAnswer(questionNumber) {
+            const answer = document.getElementById(`answer${questionNumber}`).value;
+            answers[`q${questionNumber}`] = answer;
+            updatePreviousAnswersDisplay(questionNumber);
+        }
+
+        function updatePreviousAnswer(questionNumber, currentQuestionNumber) {
+            const answer = document.getElementById(`prevAnswer${questionNumber}_${currentQuestionNumber}`).value;
+            answers[`q${questionNumber}`] = answer;
+            document.getElementById(`answer${questionNumber}`).value = answer;
+            updatePreviousAnswersDisplay(questionNumber);
+        }
+
+        function updatePreviousAnswersDisplay(changedQuestionNumber) {
+            for (let i = changedQuestionNumber + 1; i <= questions.length; i++) {
+                const prevAnswerElement = document.getElementById(`prevAnswer${changedQuestionNumber}_${i}`);
+                if (prevAnswerElement) {
+                    prevAnswerElement.value = answers[`q${changedQuestionNumber}`] || "";
+                }
+            }
+        }
+
+        function navigate(direction) {
+            sendResponsesToServer();
+            document.getElementById(`question${currentQuestion + 1}`).classList.add('hidden');
+            currentQuestion += direction;
             document.getElementById(`question${currentQuestion + 1}`).classList.remove('hidden');
-            updatePreviousAnswers(currentQuestion);
+            displayCurrentAnswers();
         }
 
-        function prevQuestion(currentQuestion) {
-            document.getElementById(`question${currentQuestion}`).classList.add('hidden');
-            document.getElementById(`question${currentQuestion - 1}`).classList.remove('hidden');
-        }
-
-        function updatePreviousAnswers(currentQuestion) {
-            for (let i = 1; i <= currentQuestion; i++) {
-                const answer = document.getElementById(`answer${i}`).value;
-                const prevAnswerElements = document.querySelectorAll(`[id^="prevAnswer${i}"]`);
-                prevAnswerElements.forEach(element => {
-                    element.value = answer;
-                });
+        function displayCurrentAnswers() {
+            for (let i = 1; i <= currentQuestion + 1; i++) {
+                const answerElement = document.getElementById(`answer${i}`);
+                if (answerElement) {
+                    answerElement.value = answers[`q${i}`] || "";
+                }
+                for (let j = i + 1; j <= questions.length; j++) {
+                    const prevAnswerElement = document.getElementById(`prevAnswer${i}_${j}`);
+                    if (prevAnswerElement) {
+                        prevAnswerElement.value = answers[`q${i}`] || "";
+                    }
+                }
             }
         }
 
         function submitForm() {
-            const answers = {
-                q1: document.getElementById('answer1').value,
-                q2: document.getElementById('answer2').value,
-                q3: document.getElementById('answer3').value
-            };
-            console.log('Form submitted:', answers);
+            sendResponsesToServer();
             alert('Form submitted successfully!');
         }
+
+        function sendResponsesToServer() {
+            fetch('/submit_responses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(answers)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Generate the form when the page loads
+        generateForm();
     </script>
 </body>
 </html>
