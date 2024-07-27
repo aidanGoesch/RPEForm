@@ -59,10 +59,17 @@
             font-size: 18px;
             font-weight: bold;
         }
+        #playButton {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <div id="player"></div>
+    <div id="videoContainer">
+        <button id="playButton" onclick="toggleVideo()">Play Video</button>
+        <div id="player"></div>
+    </div>
     <div id="form-container"></div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -79,6 +86,7 @@
         let currentQuestion = 0;
         let answers = {};
         let player;
+        let isPlaying = false;
 
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
@@ -104,23 +112,40 @@
 
         function onPlayerReady(event) {
             // The player is ready
-            loadAndPlayVideo();
+            loadVideoSegment();
         }
 
         function onPlayerStateChange(event) {
             if (event.data == YT.PlayerState.ENDED) {
-                // Video segment has ended, pause the video
-                player.pauseVideo();
+                // Video segment has ended, update button text
+                isPlaying = false;
+                updatePlayButtonText();
             }
         }
 
-        function loadAndPlayVideo() {
+        function loadVideoSegment() {
             player.loadVideoById({
                 videoId: 'JMJXvsCLu6s',
                 startSeconds: currentQuestion * 10,
                 endSeconds: (currentQuestion + 1) * 10
             });
-            player.playVideo();
+            player.pauseVideo();
+            isPlaying = false;
+            updatePlayButtonText();
+        }
+
+        function toggleVideo() {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+            isPlaying = !isPlaying;
+            updatePlayButtonText();
+        }
+
+        function updatePlayButtonText() {
+            document.getElementById('playButton').textContent = isPlaying ? 'Pause Video' : 'Play Video';
         }
 
         function generateForm() {
@@ -214,8 +239,8 @@
             document.getElementById(`question${currentQuestion + 1}`).classList.remove('hidden');
             displayCurrentAnswers();
 
-            // Load and play the next video segment
-            loadAndPlayVideo();
+            // Load the next video segment
+            loadVideoSegment();
         }
 
         function updateCurrentAnswer() {
