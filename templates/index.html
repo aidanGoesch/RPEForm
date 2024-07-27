@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forward and Backward RPE</title>
+    <title>RPE Form with YouTube Video</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,6 +34,10 @@
             margin: 4px 2px;
             cursor: pointer;
         }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
         .hidden {
             display: none;
         }
@@ -58,8 +62,10 @@
     </style>
 </head>
 <body>
+    <div id="player"></div>
     <div id="form-container"></div>
 
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         // Define your questions here
         const questions = [
@@ -72,6 +78,50 @@
 
         let currentQuestion = 0;
         let answers = {};
+        let player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '315',
+                width: '560',
+                videoId: 'JMJXvsCLu6s',
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'modestbranding': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'start': 0,
+                    'end': 10
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // The player is ready
+            loadAndPlayVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                // Video segment has ended, pause the video
+                player.pauseVideo();
+            }
+        }
+
+        function loadAndPlayVideo() {
+            player.loadVideoById({
+                videoId: 'JMJXvsCLu6s',
+                startSeconds: currentQuestion * 10,
+                endSeconds: (currentQuestion + 1) * 10
+            });
+            player.playVideo();
+        }
 
         function generateForm() {
             const container = document.getElementById('form-container');
@@ -84,10 +134,9 @@
                     <div class="navigation">
                         <span class="question-number">Question ${index + 1} of ${questions.length}</span>
                         <div>
-                            ${index > 0 ? `<button onclick="navigate(-1)">Previous</button>` : ''}
-                            ${index < questions.length - 1 
-                                ? `<button onclick="navigate(1)">Next</button>`
-                                : `<button onclick="submitForm()">Submit</button>`}
+                            ${index < questions.length - 1
+                                ? `<button id="nextBtn${index + 1}" onclick="navigate(1)" disabled>Next</button>`
+                                : `<button id="submitBtn" onclick="submitForm()" disabled>Submit</button>`}
                         </div>
                     </div>
                     <p>${question}</p>
@@ -105,6 +154,11 @@
 
                 questionDiv.innerHTML = html;
                 container.appendChild(questionDiv);
+            });
+
+            // Initialize answers object with empty strings for all questions
+            questions.forEach((_, index) => {
+                answers[`q${index + 1}`] = "";
             });
         }
 
@@ -125,6 +179,7 @@
             const answer = document.getElementById(`answer${questionNumber}`).value;
             answers[`q${questionNumber}`] = answer;
             updatePreviousAnswersDisplay(questionNumber);
+            updateButtonState(questionNumber);
         }
 
         function updatePreviousAnswer(questionNumber, currentQuestionNumber) {
@@ -132,6 +187,7 @@
             answers[`q${questionNumber}`] = answer;
             document.getElementById(`answer${questionNumber}`).value = answer;
             updatePreviousAnswersDisplay(questionNumber);
+            updateButtonState(questionNumber);
         }
 
         function updatePreviousAnswersDisplay(changedQuestionNumber) {
@@ -143,12 +199,28 @@
             }
         }
 
+        function updateButtonState(questionNumber) {
+            const button = document.getElementById(`nextBtn${questionNumber}`) || document.getElementById('submitBtn');
+            if (button) {
+                button.disabled = !answers[`q${questionNumber}`].trim();
+            }
+        }
+
         function navigate(direction) {
-            sendResponsesToServer();
+            updateCurrentAnswer();
+            sendResponsesToServer(false);
             document.getElementById(`question${currentQuestion + 1}`).classList.add('hidden');
             currentQuestion += direction;
             document.getElementById(`question${currentQuestion + 1}`).classList.remove('hidden');
             displayCurrentAnswers();
+
+            // Load and play the next video segment
+            loadAndPlayVideo();
+        }
+
+        function updateCurrentAnswer() {
+            const currentAnswer = document.getElementById(`answer${currentQuestion + 1}`).value;
+            answers[`q${currentQuestion + 1}`] = currentAnswer;
         }
 
         function displayCurrentAnswers() {
@@ -163,15 +235,18 @@
                         prevAnswerElement.value = answers[`q${i}`] || "";
                     }
                 }
+                updateButtonState(i);
             }
         }
 
         function submitForm() {
-            sendResponsesToServer();
+            updateCurrentAnswer();
+            sendResponsesToServer(true);
             alert('Form submitted successfully!');
         }
 
-        function sendResponsesToServer() {
+        function sendResponsesToServer(submitting) {
+            answers.submitting = submitting;
             fetch('/submit_responses', {
                 method: 'POST',
                 headers: {
