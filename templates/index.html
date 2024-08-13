@@ -62,11 +62,24 @@
         #playButton {
             font-size: 18px;
             margin-bottom: 10px;
+            z-index:3;
         }
+        #overlay {
+            z-index: 2;
+            pointer-events:none;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+        }
+        #player {
+            z-index: 1;
+        }
+        
     </style>
 </head>
 <body>
     <div id="videoContainer">
+        <div id="overlay"></div>
         <button id="playButton" onclick="toggleVideo()">Play Video</button>
         <div id="player"></div>
     </div>
@@ -75,13 +88,12 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         // Define your questions here
-        const questions = [
-            "What is your favorite color?",
-            "What is your favorite animal?",
-            "What is your favorite food?",
-            "What is your favorite hobby?",
-            "What is your dream vacation destination?"
-        ];
+        const questions = [];
+
+        for (let i = 1; i < 6; i++)
+        {
+            questions.push("Description of Scene " + i.toString());
+        }
 
         let currentQuestion = 0;
         let answers = {};
@@ -119,7 +131,7 @@
             if (event.data == YT.PlayerState.ENDED) {
                 // Video segment has ended, update button text
                 isPlaying = false;
-                updatePlayButtonText();
+                document.getElementById('playButton').disabled = false;
             }
         }
 
@@ -131,21 +143,15 @@
             });
             player.pauseVideo();
             isPlaying = false;
-            updatePlayButtonText();
+            document.getElementById('playButton').disabled = false;
         }
 
         function toggleVideo() {
-            if (isPlaying) {
-                player.pauseVideo();
-            } else {
+            if (!isPlaying) {
                 player.playVideo();
+                document.getElementById('playButton').disabled = true;
             }
-            isPlaying = !isPlaying;
-            updatePlayButtonText();
-        }
-
-        function updatePlayButtonText() {
-            document.getElementById('playButton').textContent = isPlaying ? 'Pause Video' : 'Play Video';
+            isPlaying = true;
         }
 
         function generateForm() {
@@ -227,7 +233,7 @@
         function updateButtonState(questionNumber) {
             const button = document.getElementById(`nextBtn${questionNumber}`) || document.getElementById('submitBtn');
             if (button) {
-                button.disabled = !answers[`q${questionNumber}`].trim();
+                button.disabled = !answers[`q${questionNumber}`].trim() || isPlaying;
             }
         }
 
