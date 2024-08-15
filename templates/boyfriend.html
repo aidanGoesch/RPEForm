@@ -71,8 +71,8 @@
 <body>
     <div id="videoContainer">
         <button id="playButton" onclick="toggleVideo()">Play Video</button>
-        <video id="videoPlayer" width="560" height="315" controls>
-            <source src="{{ url_for('static', filename='FilmFest_3.mp4') }}" type="video/mp4">
+        <video id="videoPlayer" width="560" height="315">
+            <source src="{{ url_for('static', filename='FilmFest_3.mp4') }}#t=30,45" type="video/mp4">
             Your browser does not support the video tag.
         </video>
         <br>
@@ -83,9 +83,14 @@
         // Define your questions here
         const questions = [];
 
-        for (let i = 1; i < 6; i++) {
+        for (let i = 1; i < 26; i++) {
             questions.push("Description of Scene " + i.toString());
         }
+
+        const segments = [[0, 10], [11, 32], [33, 46], [47, 71], [72, 93], [94, 106], [107, 121], [122, 148], [149, 168], [169, 183], 
+                            [184, 199], [200, 218], [219, 249], [250, 291], [292, 294], [295, 322], [323, 341], [342, 344], [345, 353], 
+                            [354, 371], [372, 380], [381, 399], [400, 407], [408, 437], [438, 447], [448, 469]];
+
 
         let currentQuestion = 0;
         let answers = {};
@@ -95,11 +100,12 @@
         function initializeVideo() {
             videoPlayer = document.getElementById('videoPlayer');
             videoPlayer.addEventListener('ended', onVideoEnded);
+            videoPlayer.addEventListener('timeupdate', checkVideoSegmentEnd);
             loadVideoSegment();
         }
 
         function loadVideoSegment() {
-            videoPlayer.currentTime = currentQuestion * 10;
+            videoPlayer.currentTime = segments[currentQuestion][0];
             videoPlayer.pause();
             isPlaying = false;
             document.getElementById('playButton').disabled = false;
@@ -114,12 +120,15 @@
             if (!isPlaying) {
                 videoPlayer.play();
                 document.getElementById('playButton').disabled = true;
-                setTimeout(() => {
-                    videoPlayer.pause();
-                    onVideoEnded();
-                }, 10000); // Play for 10 seconds
+                isPlaying = true;
             }
-            isPlaying = true;
+        }
+
+        function checkVideoSegmentEnd() {
+            if (videoPlayer.currentTime >= segments[currentQuestion][1]) {
+                videoPlayer.pause();
+                onVideoEnded();
+            }
         }
 
         function generateForm() {
