@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPE Form with YouTube Video</title>
+    <title>RPE Form with Local Video</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -62,94 +62,62 @@
         #playButton {
             font-size: 18px;
             margin-bottom: 10px;
-            z-index:3;
         }
-        #overlay {
-            z-index: 2;
-            pointer-events:none;
-            position: absolute;
-            height: 100%;
-            width: 100%;
+        #videoContainer {
+            margin-bottom: 20px;
         }
-        #player {
-            z-index: 1;
-        }
-        
     </style>
 </head>
 <body>
     <div id="videoContainer">
-        <div id="overlay"></div>
         <button id="playButton" onclick="toggleVideo()">Play Video</button>
-        <div id="player"></div>
+        <video id="videoPlayer" width="560" height="315" controls>
+            <source src="{{ url_for('static', filename='FilmFest_3.mp4') }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <br>
     </div>
     <div id="form-container"></div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         // Define your questions here
         const questions = [];
 
-        for (let i = 1; i < 6; i++)
-        {
+        for (let i = 1; i < 6; i++) {
             questions.push("Description of Scene " + i.toString());
         }
 
         let currentQuestion = 0;
         let answers = {};
-        let player;
+        let videoPlayer;
         let isPlaying = false;
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '315',
-                width: '560',
-                videoId: 'JMJXvsCLu6s',
-                playerVars: {
-                    'autoplay': 0,
-                    'controls': 0,
-                    'disablekb': 1,
-                    'modestbranding': 1,
-                    'rel': 0,
-                    'showinfo': 0,
-                    'start': 0,
-                    'end': 10
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerReady(event) {
-            // The player is ready
+        function initializeVideo() {
+            videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.addEventListener('ended', onVideoEnded);
             loadVideoSegment();
         }
 
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.ENDED) {
-                // Video segment has ended, update button text
-                isPlaying = false;
-                document.getElementById('playButton').disabled = false;
-            }
+        function loadVideoSegment() {
+            videoPlayer.currentTime = currentQuestion * 10;
+            videoPlayer.pause();
+            isPlaying = false;
+            document.getElementById('playButton').disabled = false;
         }
 
-        function loadVideoSegment() {
-            player.loadVideoById({
-                videoId: 'JMJXvsCLu6s',
-                startSeconds: currentQuestion * 10,
-                endSeconds: (currentQuestion + 1) * 10
-            });
-            player.pauseVideo();
+        function onVideoEnded() {
             isPlaying = false;
             document.getElementById('playButton').disabled = false;
         }
 
         function toggleVideo() {
             if (!isPlaying) {
-                player.playVideo();
+                videoPlayer.play();
                 document.getElementById('playButton').disabled = true;
+                setTimeout(() => {
+                    videoPlayer.pause();
+                    onVideoEnded();
+                }, 10000); // Play for 10 seconds
             }
             isPlaying = true;
         }
@@ -294,8 +262,11 @@
             });
         }
 
-        // Generate the form when the page loads
-        generateForm();
+        // Initialize video and generate the form when the page loads
+        window.onload = function() {
+            initializeVideo();
+            generateForm();
+        };
     </script>
 </body>
 </html>
