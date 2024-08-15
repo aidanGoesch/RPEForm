@@ -20,7 +20,7 @@ class ServerManager:
     def setup_routes(self):
         @self.app.route("/")
         def home():
-            return render_template("./index.html")
+            return render_template("./bison.html")                  # !!! CHANGE THIS TO "./boyfriend.html" to run the other video
 
         @self.app.route('/submit_responses', methods=['POST'])
         def submit_responses():
