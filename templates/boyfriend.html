@@ -110,6 +110,7 @@
             videoPlayer.pause();
             isPlaying = false;
             document.getElementById('playButton').disabled = false;
+            clipPLayed = false;
         }
 
         function onVideoEnded() {
@@ -118,6 +119,9 @@
         }
 
         function toggleVideo() {
+            if (videoPlayer.currentTime >= segments[currentQuestion][1]) {
+                videoPlayer.currentTime = segments[currentQuestion][0];
+            }
             if (!isPlaying) {
                 videoPlayer.play();
                 document.getElementById('playButton').disabled = true;
@@ -130,6 +134,8 @@
                 videoPlayer.pause();
                 onVideoEnded();
                 clipPlayed = true;
+            } else {
+                clipPlayed = false;
             }
         }
 
@@ -223,9 +229,8 @@
             currentQuestion += direction;
             document.getElementById(`question${currentQuestion + 1}`).classList.remove('hidden');
             displayCurrentAnswers();
-
+            
             // Load the next video segment
-            clipPLayed = false;
             loadVideoSegment();
         }
 

@@ -1,0 +1,22 @@
+# Ignore all __pycache__ directories
+__pycache__/
+
+# Ignore all .pyc files
+*.pyc
+
+# Ignore all .pyo files
+*.pyo
+
+# Ignore all .pyd files
+*.pyd
+
+# Ignore all .so files (Python C extensions)
+*.so
+
+# Optional: Ignore the entire .pytest_cache directory
+.pytest_cache/
+
+# Optional: Ignore Python virtual environment directories
+venv/
+env/
+.venv/
