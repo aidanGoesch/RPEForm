@@ -10,7 +10,7 @@ PARTICIPANT_ID = 1
 
 class ServerManager:
     def __init__(self):
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, template_folder="templates", static_folder='static')
         self.server = None
         self.participant_data = ResponseData("test_id")
         self.setup_routes()
