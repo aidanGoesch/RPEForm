@@ -72,7 +72,7 @@
     <div id="videoContainer">
         <button id="playButton" onclick="toggleVideo()">Play Video</button>
         <video id="videoPlayer" width="560" height="315">
-            <source src="{{ url_for('static', filename='FilmFest_3.mp4') }}#t=30,45" type="video/mp4">
+            <source src="{{ url_for('static', filename='FilmFest_3.mp4') }}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
         <br>
@@ -107,15 +107,18 @@
 
         function loadVideoSegment() {
             videoPlayer.currentTime = segments[currentQuestion][0];
-            videoPlayer.pause();
             isPlaying = false;
             document.getElementById('playButton').disabled = false;
             clipPLayed = false;
         }
 
         function onVideoEnded() {
+            console.log("video ended");
+            console.log(isPlaying);
+            console.log(clipPlayed);
             isPlaying = false;
             document.getElementById('playButton').disabled = false;
+            clipPlayed = true;
         }
 
         function toggleVideo() {
@@ -130,6 +133,7 @@
         }
 
         function checkVideoSegmentEnd() {
+            console.log(videoPlayer.currentTime);
             if (videoPlayer.currentTime >= segments[currentQuestion][1]) {
                 videoPlayer.pause();
                 onVideoEnded();
